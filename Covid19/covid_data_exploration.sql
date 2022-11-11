@@ -52,7 +52,7 @@ WHERE location = 'philippines'
 ORDER BY 2
 
 
-
+-- Vaccinated people percentage
 SELECT d.location, d.date, v.new_vaccinations, v.total_vaccinations, v.people_vaccinated
 FROM CovidDeaths AS d 
 	JOIN CovidVaccinations AS v 
@@ -76,5 +76,26 @@ FROM CovidDeaths AS d
 	JOIN CovidVaccinations AS v 
 	ON d.date = v.date AND
 	d.location = v.location
-WHERE d.continent IS NOT NULL AND d.location = 'United States'
+WHERE d.continent IS NOT NULL
 ORDER BY 2, 3
+
+
+SELECT d.continent, d.location, d.date, d.population, v.new_vaccinations,
+SUM(CAST(v.new_vaccinations AS INT )) OVER (PARTITION BY d.location
+ORDER BY d.location, d.date
+) AS rolling_people_vaccinated
+FROM CovidDeaths AS d JOIN
+	CovidVaccinations AS v
+	ON d.date = v.date
+	AND d.location = v.location
+WHERE d.continent IS NOT NULL AND 
+	d.location = 'Albania'
+
+
+SELECT d.continent, d.location, d.date, d.population, v.people_vaccinated, (v.people_vaccinated/d.population)*100 AS vaccinated_percentage
+FROM CovidDeaths AS d 
+	JOIN CovidVaccinations AS v 
+	ON d.date = v.date AND 
+	d.location = v.location
+WHERE d.continent IS NOT NULL 
+ORDER BY 2, 3 
