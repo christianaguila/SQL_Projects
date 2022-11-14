@@ -61,6 +61,44 @@ FROM CovidDeaths AS d
 ORDER BY 1, 2
 
 
+
+-- Create table that only includes fields of interest
+CREATE TABLE #general_covid_data(
+	continent nvarchar(255),
+	location nvarchar(255),
+	date datetime, 
+	population numeric,
+	new_cases numeric,
+	total_cases numeric,
+	new_deaths numeric,
+	total_deaths numeric, 
+	new_tests numeric,
+	total_tests numeric, 
+	new_vaccinations numeric,
+	total_vaccinations numeric, 
+	people_vaccinated numeric, 
+	people_fully_vaccinated numeric
+)
+
+INSERT INTO #general_covid_data
+SELECT d.continent, d.location, d.date, d.population, d.new_cases, d.total_cases, d.new_deaths, d.total_deaths, v.new_tests, v.total_tests,
+	v.new_vaccinations, v.total_vaccinations, v.people_vaccinated, v.people_fully_vaccinated
+FROM CovidDeaths AS d 
+	JOIN CovidVaccinations AS v 
+	ON d.date = v.date AND
+	d.location = v.location
+WHERE d.continent IS NOT NULL 
+ORDER BY 2, 3
+
+
+SELECT TOP(50) *
+FROM #general_covid_data
+
+
+
+
+
+
 SELECT *
 FROM CovidDeaths AS d 
 	JOIN CovidVaccinations AS v 
@@ -99,3 +137,37 @@ FROM CovidDeaths AS d
 	d.location = v.location
 WHERE d.continent IS NOT NULL 
 ORDER BY 2, 3 
+
+
+
+-- Creating table for vaccinated population 
+
+DROP TABLE IF EXISTS #vaccinated_population_percentage
+CREATE TABLE #vaccinated_population_percentage (
+	continent nvarchar(255),
+	location nvarchar(255),
+	date datetime,
+	population numeric, 
+	new_vaccinations numeric,
+	rolling_people_vaccinated numeric
+)
+
+INSERT INTO #vaccinated_population_percentage
+SELECT d.continent, d.location, d.date, d.population, v.new_vaccinations, SUM(CAST(new_vaccinations AS INT)) OVER (PARTITION BY d.location)
+FROM CovidDeaths AS d 
+	JOIN CovidVaccinations AS v 
+	ON d.date = v.date AND
+	d.location = v.location
+WHERE d.continent IS NOT NULL
+ORDER BY 2,3
+
+
+CREATE VIEW vaccinated_population_percentage AS 
+	SELECT d.continent, d.location, d.date, d.population, v.new_vaccinations, SUM(CAST(new_vaccinations AS INT)) OVER (PARTITION BY d.location
+	ORDER BY d.location, d.date) AS rolling_people_vaccinated
+	FROM CovidDeaths AS d 
+		JOIN CovidVaccinations AS v 
+		ON d.date = v.date AND
+		d.location = v.location
+	WHERE d.continent IS NOT NULL
+	--ORDER BY 2,3
