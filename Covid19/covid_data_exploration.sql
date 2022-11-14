@@ -142,8 +142,8 @@ ORDER BY 2, 3
 
 -- Creating table for vaccinated population 
 
-DROP TABLE IF EXISTS #vaccinated_population_percentage
-CREATE TABLE #vaccinated_population_percentage (
+DROP TABLE IF EXISTS #vaccinated_population
+CREATE TABLE #vaccinated_population (
 	continent nvarchar(255),
 	location nvarchar(255),
 	date datetime,
@@ -152,7 +152,7 @@ CREATE TABLE #vaccinated_population_percentage (
 	rolling_people_vaccinated numeric
 )
 
-INSERT INTO #vaccinated_population_percentage
+INSERT INTO #vaccinated_population
 SELECT d.continent, d.location, d.date, d.population, v.new_vaccinations, SUM(CAST(new_vaccinations AS INT)) OVER (PARTITION BY d.location)
 FROM CovidDeaths AS d 
 	JOIN CovidVaccinations AS v 
@@ -162,7 +162,7 @@ WHERE d.continent IS NOT NULL
 ORDER BY 2,3
 
 
-CREATE VIEW vaccinated_population_percentage AS 
+CREATE VIEW vaccinated_population AS 
 	SELECT d.continent, d.location, d.date, d.population, v.new_vaccinations, SUM(CAST(new_vaccinations AS INT)) OVER (PARTITION BY d.location
 	ORDER BY d.location, d.date) AS rolling_people_vaccinated
 	FROM CovidDeaths AS d 
@@ -171,3 +171,8 @@ CREATE VIEW vaccinated_population_percentage AS
 		d.location = v.location
 	WHERE d.continent IS NOT NULL
 	--ORDER BY 2,3
+	
+
+SELECT *
+FROM #vaccinated_population
+ORDER BY 2,3
